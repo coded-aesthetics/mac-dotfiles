@@ -691,6 +691,12 @@ function setwal() {
                 # Set wallpaper separately using macOS command
                 osascript -e "tell application \"Finder\" to set desktop picture to POSIX file \"$image\""
                 ~/.config/wal/scripts/iterm2.sh 2>/dev/null
+                
+                # Update Zed theme
+                if [[ -f ~/dotfiles/config/wal/update_zed.py ]]; then
+                    python3 ~/dotfiles/config/wal/update_zed.py >/dev/null 2>&1
+                fi
+                
                 echo "Applied random wallpaper: $(basename "$image")"
             else
                 echo "Failed to generate colors for: $(basename "$image")"
@@ -714,6 +720,12 @@ function setwal() {
                 # Set wallpaper separately using macOS command
                 osascript -e "tell application \"Finder\" to set desktop picture to POSIX file \"$1\""
                 ~/.config/wal/scripts/iterm2.sh 2>/dev/null
+                
+                # Update Zed theme
+                if [[ -f ~/dotfiles/config/wal/update_zed.py ]]; then
+                    python3 ~/dotfiles/config/wal/update_zed.py >/dev/null 2>&1
+                fi
+                
                 echo "Applied wallpaper: $(basename "$1")"
             else
                 echo "Failed to generate colors for: $(basename "$1")"
@@ -800,6 +812,13 @@ function walupdate() {
             ~/.config/wal/scripts/iterm2.sh 2>/dev/null
         fi
         
+        # Update Zed theme
+        if [[ -f ~/dotfiles/config/wal/update_zed.py ]]; then
+            python3 ~/dotfiles/config/wal/update_zed.py >/dev/null 2>&1
+        fi
+        
+        echo "🎨 Updated iTerm2 and Zed themes"
+        
         echo "🎉 Colors updated from: $(basename "$current_wallpaper")"
     else
         echo "❌ Failed to generate colors from: $current_wallpaper"
@@ -861,6 +880,24 @@ function walcursor() {
         echo "  4. Cursor should be clearly visible!"
     else
         echo "❌ Cursor fix script not found"
+        return 1
+    fi
+}
+
+# Function to update Zed theme from current pywal colors
+function walzed() {
+    echo "🎨 Updating Zed Theme"
+    echo "===================="
+    
+    if [[ -f ~/dotfiles/config/wal/update_zed.py ]]; then
+        python3 ~/dotfiles/config/wal/update_zed.py
+        echo ""
+        echo "📝 Next steps:"
+        echo "  1. Restart Zed editor"
+        echo "  2. Theme should automatically be applied"
+        echo "  3. Check Preferences → Theme if needed"
+    else
+        echo "❌ Zed theme script not found"
         return 1
     fi
 }

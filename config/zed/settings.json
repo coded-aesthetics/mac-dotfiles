@@ -1,0 +1,28 @@
+{
+    "theme": "Pywal",
+    "buffer_font_family": "Operator Mono Lig",
+    "ui_font_family": "MesloLGLDZ Nerd Font",
+    "buffer_font_size": 17,
+    "auto_update": true,
+    "telemetry": {
+        "diagnostics": false,
+        "metrics": false
+    },
+    "relative_line_numbers": true,
+    "show_whitespaces": "selection",
+    "tab_size": 4,
+    "soft_wrap": "editor_width",
+    "preview_tabs": {
+        "enabled": false
+    },
+    "scrollbar": {
+        "show": "auto"
+    },
+    "terminal": {
+        "shell": {
+            "program": "zsh"
+        },
+        "font_family": "MesloLGLDZ Nerd Font",
+        "working_directory": "current_project_directory"
+    }
+}
