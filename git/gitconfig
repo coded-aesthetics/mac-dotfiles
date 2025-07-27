@@ -1,0 +1,89 @@
+[user]
+	email = jan@coded-aesthetics.com
+	name = Jan Reinsch
+
+[init]
+	defaultBranch = main
+
+[core]
+	editor = zed
+	autocrlf = input
+	safecrlf = warn
+
+[pull]
+	rebase = false
+
+[push]
+	default = simple
+	autoSetupRemote = true
+
+[merge]
+	tool = vscode
+
+[diff]
+	tool = vscode
+
+[difftool "vscode"]
+	cmd = code --wait --diff $LOCAL $REMOTE
+
+[mergetool "vscode"]
+	cmd = code --wait $MERGED
+
+[alias]
+	# Basic shortcuts
+	st = status
+	co = checkout
+	br = branch
+	cm = commit
+	ps = push
+	pl = pull
+	
+	# Advanced shortcuts
+	unstage = reset HEAD --
+	last = log -1 HEAD
+	visual = !gitk
+	
+	# Pretty logging
+	lg = log --oneline --graph --decorate --all
+	lga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'
+	
+	# Show branches
+	branches = branch -a
+	remotes = remote -v
+	
+	# Quick amend
+	amend = commit --amend --no-edit
+	
+	# Undo last commit
+	undo = reset --soft HEAD~1
+	
+	# Clean up merged branches
+	cleanup = "!git branch --merged | grep -v '\\*\\|main\\|master\\|develop' | xargs -n 1 git branch -d"
+
+[color]
+	ui = auto
+	branch = auto
+	diff = auto
+	status = auto
+
+[color "branch"]
+	current = yellow reverse
+	local = yellow
+	remote = green
+
+[color "diff"]
+	meta = yellow bold
+	frag = magenta bold
+	old = red bold
+	new = green bold
+
+[color "status"]
+	added = yellow
+	changed = green
+	untracked = cyan
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
