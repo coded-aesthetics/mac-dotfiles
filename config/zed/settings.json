@@ -1,4 +1,12 @@
 {
+    "agent": {
+        "default_profile": "write",
+        "default_model": {
+            "provider": "zed.dev",
+            "model": "claude-sonnet-4"
+        },
+        "always_allow_tool_actions": true
+    },
     "theme": "Pywal",
     "buffer_font_family": "Operator Mono Lig",
     "ui_font_family": "MesloLGLDZ Nerd Font",

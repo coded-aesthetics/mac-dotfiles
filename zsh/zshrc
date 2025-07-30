@@ -614,9 +614,10 @@ function timer() {
 
 # Color palette
 function colors() {
-    for i in {0..255}; do
-        printf "\x1b[38;5;${i}mcolor${i}\x1b[0m\n"
-    done | column -c 80
+    for i in {0..16}; do
+        printf "\033[48;5;${i}m  "
+    done
+    printf "\033[0m\n"
 }
 
 # Load local customizations if they exist
@@ -634,31 +635,6 @@ autoload -U compinit && compinit
 # Add pywal binary to PATH
 export PATH="$HOME/Library/Python/3.9/bin:$PATH"
 
-# Pywal aliases and functions
-# Safe wal-refresh function instead of alias
-function wal-refresh() {
-    # Use the safe refresh script to avoid terminal closure
-    if [[ -f ~/.config/wal/safe_refresh.sh ]]; then
-        ~/.config/wal/safe_refresh.sh
-    else
-        echo "🔄 Basic color refresh..."
-        
-        # Fallback: just reload sequences if they exist
-        if [[ -f ~/.cache/wal/sequences ]]; then
-            cat ~/.cache/wal/sequences
-            echo "✅ Colors reloaded from cache"
-        else
-            echo "❌ No color cache found. Run 'setwal <image>' first."
-            return 1
-        fi
-    fi
-}
-
-alias wal-image='wal -i -n'
-alias wal-random='wal -i ~/Pictures/Wallpapers/ -n && ~/.config/wal/scripts/iterm2.sh'
-alias wal-light='wal -l -i -n'
-alias wal-dark='wal -i -n'
-
 # Function to set wallpaper and update colors
 function setwal() {
     if [ $# -eq 0 ]; then
@@ -666,73 +642,66 @@ function setwal() {
         echo "       setwal random     (random from ~/Pictures/Wallpapers/)"
         return 1
     fi
-    
+
+    # Add error handling to prevent terminal closure
+    set +e  # Don't exit on error
+
+    # Determine the image file path
+    local image_path
     if [ "$1" = "random" ]; then
-        # Set random wallpaper from Pictures directory
-        local wallpaper_dir="$HOME/Pictures/Wallpapers"
+        # Set random wallpaper from Wallpapers directory
+        local wallpaper_dir=$(realpath "$HOME/Pictures/Wallpapers")
         if [ ! -d "$wallpaper_dir" ]; then
             wallpaper_dir="$HOME/Pictures"
         fi
-        
-        # Find a random image
-        local image=$(find "$wallpaper_dir" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.bmp" \) | sort -R | head -1)
-        
-        if [ -n "$image" ]; then
-            # Generate colors safely
-            if ~/.config/wal/safe_wal.sh "$image"; then
-                # Apply smart cursor fix
-                python3 ~/.config/wal/fix_cursor_sequences.py >/dev/null 2>&1
-                
-                # Apply color sequences with fixed cursor
-                if [[ -f ~/.cache/wal/sequences ]]; then
-                    cat ~/.cache/wal/sequences
-                fi
-                
-                # Set wallpaper separately using macOS command
-                osascript -e "tell application \"Finder\" to set desktop picture to POSIX file \"$image\""
-                ~/.config/wal/scripts/iterm2.sh 2>/dev/null
-                
-                # Update Zed theme
-                if [[ -f ~/dotfiles/config/wal/update_zed.py ]]; then
-                    python3 ~/dotfiles/config/wal/update_zed.py >/dev/null 2>&1
-                fi
-                
-                echo "Applied random wallpaper: $(basename "$image")"
-            else
-                echo "Failed to generate colors for: $(basename "$image")"
-            fi
+
+        # Use gshuf if available (from coreutils), otherwise use sort -R
+        local shuffle_cmd
+        if command -v gshuf >/dev/null 2>&1; then
+            shuffle_cmd="gshuf"
+        elif command -v shuf >/dev/null 2>&1; then
+            shuffle_cmd="shuf"
         else
+            shuffle_cmd="sort -R"
+        fi
+
+        image_path=$(mdfind -onlyin "$HOME/Pictures/Wallpapers" 'kMDItemFSName == "*.jpg"cd || kMDItemFSName == "*.jpeg"cd || kMDItemFSName == "*.png"cd || kMDItemFSName == "*.gif"cd || kMDItemFSName == "*.bmp"cd' | $shuffle_cmd | head -1)
+
+        if [ -z "$image_path" ]; then
             echo "No images found in $wallpaper_dir"
+            return 1
         fi
     else
-        # Set specific wallpaper
-        if [ -f "$1" ]; then
-            # Generate colors safely
-            if ~/.config/wal/safe_wal.sh "$1"; then
-                # Apply smart cursor fix
-                python3 ~/.config/wal/fix_cursor_sequences.py >/dev/null 2>&1
-                
-                # Apply color sequences with fixed cursor
-                if [[ -f ~/.cache/wal/sequences ]]; then
-                    cat ~/.cache/wal/sequences
-                fi
-                
-                # Set wallpaper separately using macOS command
-                osascript -e "tell application \"Finder\" to set desktop picture to POSIX file \"$1\""
-                ~/.config/wal/scripts/iterm2.sh 2>/dev/null
-                
-                # Update Zed theme
-                if [[ -f ~/dotfiles/config/wal/update_zed.py ]]; then
-                    python3 ~/dotfiles/config/wal/update_zed.py >/dev/null 2>&1
-                fi
-                
-                echo "Applied wallpaper: $(basename "$1")"
-            else
-                echo "Failed to generate colors for: $(basename "$1")"
-            fi
-        else
+        # Use the provided file path
+        if [ ! -f "$1" ]; then
             echo "File not found: $1"
+            return 1
         fi
+        image_path="$1"
+    fi
+
+    # Apply wallpaper and theme changes (common logic)
+    wal --backend colorz \
+        -i "$image_path" \
+        -n \
+        --saturate 0.8
+
+    local exit_code=$?
+    if [ $exit_code -eq 0 ]; then
+        # Set wallpaper separately using macOS command
+        osascript -e "tell application \"Finder\" to set desktop picture to POSIX file \"$image_path\""
+        python3 "$HOME/.config/wal/scripts/update_iterm2.py" 2>/dev/null
+
+        # Update Zed theme
+        if [[ -f ~/dotfiles/config/wal/update_zed.py ]]; then
+            python3 ~/dotfiles/config/wal/update_zed.py >/dev/null 2>&1
+        fi
+
+        echo "Applied wallpaper: $(basename "$image_path")"
+        return 0
+    else
+        echo "Failed to generate colors for: $(basename "$image_path")"
+        return 1
     fi
 }
 
@@ -745,193 +714,29 @@ function walcolors() {
     done
 }
 
-# Function to update colors from current wallpaper without changing it
-function walupdate() {
-    local current_wallpaper=""
-    local detection_method=""
-    
-    echo "🔍 Detecting current wallpaper..."
-    
-    # Method 1: Check pywal cache first (most reliable for our use case)
-    if [[ -f ~/.cache/wal/wal ]]; then
-        current_wallpaper=$(cat ~/.cache/wal/wal 2>/dev/null)
-        if [[ -n "$current_wallpaper" && -f "$current_wallpaper" ]]; then
-            detection_method="pywal cache"
-        else
-            current_wallpaper=""
-        fi
-    fi
-    
-    # Method 2: Try System Events AppleScript if cache failed
-    if [[ -z "$current_wallpaper" ]]; then
-        if current_wallpaper=$(osascript -e 'tell application "System Events" to tell every desktop to get picture' 2>/dev/null); then
-            # Clean up the output (remove quotes and handle multiple desktops)
-            current_wallpaper=$(echo "$current_wallpaper" | sed 's/^"//' | sed 's/"$//' | head -1)
-            if [[ -f "$current_wallpaper" ]]; then
-                detection_method="System Events"
-            else
-                current_wallpaper=""
-            fi
-        fi
-    fi
-    
-    # Method 3: Manual specification
-    if [[ -z "$current_wallpaper" ]]; then
-        echo "❌ Could not auto-detect wallpaper"
-        echo "📝 Available options:"
-        echo "   1. Specify manually: walupdate <image_path>"
-        echo "   2. Use test image: walupdate ~/Desktop/Screenshot\\ 2025-07-27\\ at\\ 08.46.32.png"
-        echo "   3. Set new wallpaper: setwal <image_path>"
-        
-        # Check if user provided a manual path
-        if [[ $# -gt 0 && -f "$1" ]]; then
-            current_wallpaper="$1"
-            detection_method="manual specification"
-        else
-            return 1
-        fi
-    fi
-    
-    echo "✅ Found wallpaper via $detection_method: $(basename "$current_wallpaper")"
-    echo "🎨 Updating colors..."
-    
-    # Generate colors using safe wrapper
-    if ~/.config/wal/safe_wal.sh "$current_wallpaper"; then
-        # Apply smart cursor fix
-        python3 ~/.config/wal/fix_cursor_sequences.py >/dev/null 2>&1
-        
-        # Manually apply color sequences with fixed cursor
-        if [[ -f ~/.cache/wal/sequences ]]; then
-            cat ~/.cache/wal/sequences
-        fi
-        
-        echo "✅ Colors applied to terminal with smart cursor"
-        
-        # Update iTerm2
-        if [[ -f ~/.config/wal/scripts/iterm2.sh ]]; then
-            ~/.config/wal/scripts/iterm2.sh 2>/dev/null
-        fi
-        
-        # Update Zed theme
-        if [[ -f ~/dotfiles/config/wal/update_zed.py ]]; then
-            python3 ~/dotfiles/config/wal/update_zed.py >/dev/null 2>&1
-        fi
-        
-        echo "🎨 Updated iTerm2 and Zed themes"
-        
-        echo "🎉 Colors updated from: $(basename "$current_wallpaper")"
-    else
-        echo "❌ Failed to generate colors from: $current_wallpaper"
-        return 1
-    fi
-}
-
-# Function to preview pywal theme without applying
-function walpreview() {
-    if [ $# -eq 0 ]; then
-        echo "Usage: walpreview <image_path>"
-        return 1
-    fi
-    
-    if [ -f "$1" ]; then
-        wal -i "$1" --preview
-    else
-        echo "File not found: $1"
-    fi
-}
-
-# Function to configure iTerm2 transparency
-function waltransparency() {
-    if [ $# -eq 0 ]; then
-        echo "🎨 iTerm2 Transparency Control"
-        echo "============================="
-        echo ""
-        echo "Usage: waltransparency <level>"
-        echo "       waltransparency show"
-        echo ""
-        echo "Examples:"
-        echo "  waltransparency 0.2    # 20% transparency"
-        echo "  waltransparency 0.3    # 30% transparency (default)"
-        echo "  waltransparency 0.5    # 50% transparency"
-        echo "  waltransparency show   # Show current setting"
-        echo ""
-        echo "Presets:"
-        echo "  0.1 - Subtle     0.3 - Medium (default)"
-        echo "  0.2 - Light      0.4 - Strong"
-        echo "  0.5 - Dramatic"
-        return 1
-    fi
-    
-    python3 ~/.config/wal/scripts/transparency_config.py "$1"
-}
-
-# Function to fix cursor visibility immediately
-function walcursor() {
-    echo "🎯 Fixing Cursor Visibility"
-    echo "==========================="
-    
-    if [[ -f ~/.config/wal/fix_cursor_sequences.py ]]; then
-        python3 ~/.config/wal/fix_cursor_sequences.py
-        echo ""
-        echo "📝 Test cursor visibility:"
-        echo "  1. Open vim: vim ~/.zshrc"
-        echo "  2. Move cursor around"
-        echo "  3. Try insert mode (press 'i')"
-        echo "  4. Cursor should be clearly visible!"
-    else
-        echo "❌ Cursor fix script not found"
-        return 1
-    fi
-}
-
-# Function to update Zed theme from current pywal colors
-function walzed() {
-    echo "🎨 Updating Zed Theme"
-    echo "===================="
-    
-    if [[ -f ~/dotfiles/config/wal/update_zed.py ]]; then
-        python3 ~/dotfiles/config/wal/update_zed.py
-        echo ""
-        echo "📝 Next steps:"
-        echo "  1. Restart Zed editor"
-        echo "  2. Theme should automatically be applied"
-        echo "  3. Check Preferences → Theme if needed"
-    else
-        echo "❌ Zed theme script not found"
-        return 1
-    fi
-}
-
-function wallpaper() {
-   if [ $# -eq 0 ]; then
-        echo "Usage: wallpaper <image_path>"
-        return 1
-    fi
-
-    if [ -f "$1" ]; then
-        walupdate
-        setwal "$1"
-        wal-refresh
-    else
-        echo "File not found: $1"
-    fi
-    if [ $# -eq 0 ]; then
-        return 1
-    fi
- }
-
 # Apply pywal colors after initialization (deferred loading)
 if [[ -f ~/.config/wal/load_colors.zsh ]]; then
     # Schedule color loading after prompt is ready
     autoload -U add-zsh-hook
-    
+
     # Function to load colors after first prompt
     _load_pywal_colors() {
         source ~/.config/wal/load_colors.zsh
         # Remove this hook after first execution
         add-zsh-hook -d precmd _load_pywal_colors
     }
-    
+
     # Add hook to load colors after first prompt
     add-zsh-hook precmd _load_pywal_colors
 fi
+
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=(/Users/jan/.docker/completions $fpath)
+autoload -Uz compinit
+compinit
+# End of Docker CLI completions
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/jan/.lmstudio/bin"
+# End of LM Studio CLI section
+

@@ -6,7 +6,7 @@
 	defaultBranch = main
 
 [core]
-	editor = zed
+	editor = vim
 	autocrlf = input
 	safecrlf = warn
 

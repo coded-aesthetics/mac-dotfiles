@@ -54,7 +54,7 @@ brew install --cask \
     zed \
     visual-studio-code \
     docker \
-    postman \
+    insomnia \
     rectangle \
     alfred
 
