@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Wal wrapper script for wallust compatibility
+# This script allows seamless migration from pywal to wallust
+# by providing the same wal command interface
+
+# Ensure wallust is in PATH
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# Check if wallust is available
+if ! command -v wallust >/dev/null 2>&1; then
+    echo "Error: wallust is not installed or not in PATH"
+    echo "Please install wallust with: cargo install wallust"
+    exit 1
+fi
+
+# Use wallust in pywal compatibility mode
+exec wallust pywal "$@"

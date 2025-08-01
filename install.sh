@@ -22,10 +22,10 @@ echo -e "${BLUE}Dotfiles directory: ${DOTFILES_DIR}${NC}"
 create_symlink() {
     local source="$1"
     local target="$2"
-    
+
     # Create directory if it doesn't exist
     mkdir -p "$(dirname "$target")"
-    
+
     if [ -L "$target" ]; then
         echo -e "${YELLOW}⚠️  Removing existing symlink: $target${NC}"
         rm "$target"
@@ -33,7 +33,7 @@ create_symlink() {
         echo -e "${YELLOW}⚠️  Backing up existing file: $target -> $target.backup$(date +%Y%m%d_%H%M%S)${NC}"
         mv "$target" "$target.backup$(date +%Y%m%d_%H%M%S)"
     fi
-    
+
     echo -e "${GREEN}✅ Creating symlink: $target -> $source${NC}"
     ln -s "$source" "$target"
 }
@@ -62,13 +62,13 @@ install_powerlevel10k() {
 # Function to install useful zsh plugins
 install_zsh_plugins() {
     local custom_plugins_dir="$HOME/.oh-my-zsh/custom/plugins"
-    
+
     # zsh-autosuggestions
     if [ ! -d "$custom_plugins_dir/zsh-autosuggestions" ]; then
         echo -e "${BLUE}📦 Installing zsh-autosuggestions...${NC}"
         git clone https://github.com/zsh-users/zsh-autosuggestions "$custom_plugins_dir/zsh-autosuggestions"
     fi
-    
+
     # zsh-syntax-highlighting
     if [ ! -d "$custom_plugins_dir/zsh-syntax-highlighting" ]; then
         echo -e "${BLUE}📦 Installing zsh-syntax-highlighting...${NC}"
@@ -79,25 +79,25 @@ install_zsh_plugins() {
 # Main installation
 main() {
     echo -e "${BLUE}🔧 Starting dotfiles installation...${NC}\n"
-    
+
     # Install dependencies
     install_oh_my_zsh
     install_powerlevel10k
     install_zsh_plugins
-    
+
     echo -e "\n${BLUE}🔗 Creating symlinks...${NC}"
-    
+
     # Create symlinks for dotfiles
     create_symlink "$DOTFILES_DIR/zsh/zshrc" "$HOME/.zshrc"
     create_symlink "$DOTFILES_DIR/zsh/zshenv" "$HOME/.zshenv"
     create_symlink "$DOTFILES_DIR/zsh/p10k.zsh" "$HOME/.p10k.zsh"
     create_symlink "$DOTFILES_DIR/zsh/profile" "$HOME/.profile"
-    
+
     # Create symlink for git config
     if [ -f "$DOTFILES_DIR/git/gitconfig" ]; then
         create_symlink "$DOTFILES_DIR/git/gitconfig" "$HOME/.gitconfig"
     fi
-    
+
     # Create symlinks for config directories
     if [ -d "$DOTFILES_DIR/config" ]; then
         for config_dir in "$DOTFILES_DIR/config"/*; do
@@ -107,19 +107,25 @@ main() {
             fi
         done
     fi
-    
+
     # Make scripts executable
     if [ -d "$DOTFILES_DIR/bin" ]; then
         chmod +x "$DOTFILES_DIR/bin"/*
     fi
-    
+
     if [ -d "$DOTFILES_DIR/scripts" ]; then
         chmod +x "$DOTFILES_DIR/scripts"/*
     fi
-    
+
+    # Setup kitty configuration
+    if [ -f "$DOTFILES_DIR/scripts/setup_kitty.sh" ]; then
+        echo -e "\n${BLUE}🐱 Setting up Kitty terminal...${NC}"
+        "$DOTFILES_DIR/scripts/setup_kitty.sh"
+    fi
+
     echo -e "\n${GREEN}🎉 Dotfiles installation completed!${NC}"
     echo -e "${YELLOW}📝 Please restart your terminal or run 'source ~/.zshrc' to apply changes.${NC}"
-    
+
     # Optional: Set zsh as default shell
     if [ "$SHELL" != "$(which zsh)" ]; then
         echo -e "\n${YELLOW}💡 Would you like to set zsh as your default shell? (y/n)${NC}"

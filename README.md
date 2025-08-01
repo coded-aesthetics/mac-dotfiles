@@ -107,7 +107,7 @@ ftext       # Search text in files
 ### Color Theming
 - **Pywal Integration**: Dynamic color schemes based on wallpapers
 - **Terminal Colors**: Automatic terminal color updating
-- **iTerm2 Support**: Seamless iTerm2 integration
+- **Kitty Support**: Modern terminal with MesloLGLDZ Nerd Font integration
 - **Smart Cursor**: Intelligent cursor visibility fixes
 
 ## 🔧 Installation Details
@@ -182,7 +182,7 @@ brew install docker kubectl helm
 ```
 
 ### Terminal & Editor
-- **iTerm2**: Feature-rich terminal emulator
+- **Kitty**: GPU-accelerated terminal with font ligatures
 - **Zed**: Modern code editor (configured as default)
 - **VS Code**: Alternative editor with excellent extensions
 

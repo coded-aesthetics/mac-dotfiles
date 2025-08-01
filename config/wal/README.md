@@ -1,71 +1,76 @@
-# Pywal + zsh + iTerm2 Integration - Quick Reference
+# Wallust + zsh + Kitty Integration - Quick Reference
+
+**⚠️ MIGRATED FROM PYWAL TO WALLUST** - See [WALLUST_MIGRATION.md](WALLUST_MIGRATION.md) for details
 
 ## What was installed:
 
-### ✅ Pywal
-- **Location**: `/Users/jan/Library/Python/3.9/bin/wal`
-- **Backend**: colorz (for better macOS compatibility)
-- **Config**: `~/.config/wal/`
+### ✅ Wallust (Rust-based pywal replacement)
+- **Location**: `/Users/jan/.cargo/bin/wallust`
+- **Backend**: kmeans (advanced color extraction)
+- **Config**: `~/.config/wallust/`
+- **Compatibility**: Full pywal compatibility mode
 
 ### ✅ zsh Integration
 - **Added to**: `~/.zshrc`
 - **Auto-loads**: Colors when terminal starts
 - **Path added**: Pywal binary automatically available
 
-### ✅ iTerm2 Integration
-- **Dynamic Profile**: "Pywal" profile created automatically
-- **Auto-updates**: When colors change
-- **Location**: `~/Library/Application Support/iTerm2/DynamicProfiles/pywal.json`
+### ✅ Kitty Integration
+- **Symlinked Config**: Configuration managed in dotfiles
+- **Auto-updates**: Colors and config sync automatically
+- **Font**: MesloLGLDZ Nerd Font at size 17
+- **Location**: `~/.config/kitty` -> `~/dotfiles/config/kitty`
 
 ## 🎨 Available Commands:
 
 ### Basic Usage:
 ```bash
-# Set colors from an image (without changing wallpaper)
-wal-image ~/Pictures/myimage.jpg
-
-# Set wallpaper AND update colors
+# Set wallpaper AND update colors (recommended)
 setwal ~/Pictures/myimage.jpg
 
 # Use a random image from wallpapers folder
 setwal random
 
-# Refresh current colors
-wal-refresh
-
 # Show current color palette in terminal
 walcolors
 
-# Preview colors without applying (if supported)
-walpreview ~/Pictures/myimage.jpg
+# Test the setup
+test-setwal
 ```
 
-### Original pywal commands:
+### Direct wallust commands (if needed):
 ```bash
-# Basic usage
-wal -i ~/Pictures/image.jpg
+# Basic usage (pywal compatibility mode)
+wallust pywal -i ~/Pictures/image.jpg
 
 # Light theme
-wal -l -i ~/Pictures/image.jpg
+wallust pywal -l -i ~/Pictures/image.jpg
 
 # Don't set wallpaper, just colors
-wal -n -i ~/Pictures/image.jpg
+wallust pywal -n -i ~/Pictures/image.jpg
 
 # Use different backend
-wal --backend colorz -i ~/Pictures/image.jpg
+wallust pywal --backend colorz -i ~/Pictures/image.jpg
+
+# Native wallust command (more features)
+wallust run ~/Pictures/image.jpg
 ```
 
 ## 🔧 Setup Files:
 
 ### Scripts:
-- `~/.config/wal/scripts/update_iterm2.py` - iTerm2 color updater
-- `~/.config/wal/scripts/iterm2.sh` - Shell wrapper for iTerm2 updates
+- `~/.config/wal/scripts/wal` - **NEW**: Wallust compatibility wrapper
+- `~/.config/wal/scripts/update_kitty.py` - Kitty color updater
+- `~/.config/wal/scripts/update_zed.py` - Zed editor theme updater
 - `~/.config/wal/scripts/wallpaper_monitor.sh` - Automatic wallpaper monitor
-- `~/.config/wal/setup_test.sh` - Test and verification script
+- `~/dotfiles/scripts/setup_kitty.sh` - **NEW**: Kitty configuration setup
 
 ### Configuration:
-- `~/.config/wal/` - Main pywal config directory
-- `~/.cache/wal/` - Generated color schemes and cache
+- `~/.config/wallust/` - **NEW**: Main wallust config directory
+- `~/.config/wallust/wallust.toml` - **NEW**: Wallust configuration
+- `~/.config/wallust/templates/` - **NEW**: Wallust templates
+- `~/.config/wal/` - Legacy pywal config (kept for compatibility)
+- `~/.cache/wal/` - Generated color schemes and cache (same location)
 
 ### Launch Agent (optional):
 - `~/Library/LaunchAgents/com.user.pywal.wallpaper-monitor.plist` - Auto-start wallpaper monitoring
@@ -74,17 +79,19 @@ wal --backend colorz -i ~/Pictures/image.jpg
 
 1. **Test the setup:**
    ```bash
-   ~/.config/wal/setup_test.sh
+   test-setwal
    ```
 
 2. **Use with an image:**
    ```bash
-   setwal ~/Desktop/Screenshot\ 2025-07-27\ at\ 08.46.32.png
+   setwal ~/Pictures/Wallpapers/your-image.jpg
    ```
 
 3. **Open new terminal** or run `source ~/.zshrc`
 
-4. **In iTerm2**: Switch to "Pywal" profile in Preferences > Profiles
+4. **In Kitty**: Colors and fonts update automatically
+   - MesloLGLDZ Nerd Font at size 17
+   - Transparency and visual effects enabled
 
 ## 🎯 Pro Tips:
 
@@ -113,8 +120,11 @@ launchctl unload ~/Library/LaunchAgents/com.user.pywal.wallpaper-monitor.plist
 
 ### If colors don't appear:
 ```bash
-# Check if pywal is working
-wal -v
+# Check if wallust is working
+wallust --version
+
+# Run diagnostics
+test-setwal
 
 # Manually source colors
 source ~/.cache/wal/colors.sh
@@ -123,30 +133,68 @@ source ~/.cache/wal/colors.sh
 ls ~/.cache/wal/
 ```
 
-### If iTerm2 profile doesn't appear:
+### If kitty config doesn't update:
 ```bash
-# Manually update iTerm2
-python3 ~/.config/wal/scripts/update_iterm2.py
+# Re-run kitty setup
+~/dotfiles/scripts/setup_kitty.sh
 
-# Check if profile was created
-ls "~/Library/Application Support/iTerm2/DynamicProfiles/"
+# Check symlink
+ls -la ~/.config/kitty
+
+# Reload kitty manually
+kitty @ load-config
 ```
 
 ### Reset everything:
 ```bash
-# Clear pywal cache
+# Clear wallust cache
 rm -rf ~/.cache/wal/
 
 # Regenerate colors
-wal --backend colorz -i ~/Desktop/Screenshot\ 2025-07-27\ at\ 08.46.32.png
+setwal ~/Pictures/Wallpapers/your-image.jpg
 ```
 
 ## 🌈 What happens when you run setwal:
 
-1. **Pywal** extracts colors from your image
+1. **Wallust** extracts colors from your image (faster, better algorithm)
 2. **Terminal colors** are updated via escape sequences
 3. **zsh** loads the new colors automatically
-4. **iTerm2** gets a new dynamic profile with matching colors
-5. **Wallpaper** is set (if using setwal command)
+4. **Kitty** colors update automatically with transparency and MesloLGLDZ font
+5. **Zed** editor theme updates automatically
+6. **Wallpaper** is set using macOS native commands
 
-Enjoy your dynamic, color-coordinated terminal! 🎨✨
+## 🆕 Wallust Advantages:
+
+- ✅ **No more terminal detection issues** - Seamless kitty support
+- ✅ **Faster color extraction** - Rust-based performance
+- ✅ **Better color algorithms** - kmeans clustering + LAB colorspace
+- ✅ **Active maintenance** - Regularly updated unlike archived pywal
+- ✅ **Simplified codebase** - Removed 60+ lines of pywal workarounds
+- ✅ **Modern font setup** - MesloLGLDZ Nerd Font with proper configuration
+- ✅ **Dotfiles integration** - Kitty config managed in version control
+
+## 📚 Migration Info:
+
+- **From**: pywal + iTerm2 (Python, archived)
+- **To**: wallust + kitty (Rust, actively maintained)  
+- **Terminal**: Switched from iTerm2 to Kitty for better integration
+- **Font**: Configured with MesloLGLDZ Nerd Font at size 17
+- **Config**: Kitty configuration now managed in dotfiles with symlinks
+- **Performance**: Significantly improved
+- **See**: [WALLUST_MIGRATION.md](WALLUST_MIGRATION.md) for complete details
+
+Enjoy your dynamic, color-coordinated kitty terminal! 🎨✨ Now powered by wallust! 🦀
+
+## 🚀 Quick Setup for New Systems:
+
+```bash
+# 1. Install kitty and font
+brew install --cask kitty
+brew install font-meslo-lg-nerd-font
+
+# 2. Setup kitty config symlink
+~/dotfiles/scripts/setup_kitty.sh
+
+# 3. Test with wallpaper
+setwal random
+```
