@@ -27,6 +27,8 @@ brew install \
     dust \
     duf \
     fzf \
+    fastfetch \
+    volta \
     gh \
     node \
     python3 \
@@ -34,12 +36,7 @@ brew install \
     rust
 
 echo "🐳 Installing development tools..."
-brew install \
-    docker \
-    kubectl \
-    helm \
-    terraform \
-    awscli
+brew install docker
 
 echo "🎨 Installing fonts..."
 brew tap homebrew/cask-fonts
