@@ -7,7 +7,7 @@
         },
         "always_allow_tool_actions": true
     },
-    "theme": "Pywal",
+    "theme": "Wallust",
     "buffer_font_family": "Operator Mono Lig",
     "ui_font_family": "MesloLGLDZ Nerd Font",
     "buffer_font_size": 17,

@@ -697,46 +697,10 @@ function setwal() {
     # Apply wallpaper and theme changes using wallust
     echo "🎨 Extracting colors from: $(basename "$image_path") (using wallust)"
 
-    # Use wallust in pywal compatibility mode - much simpler than pywal!
-    echo "🔧 Running wallust in pywal compatibility mode..."
-    if wallust pywal --backend colorz -i "$image_path" -n --saturate 0.8; then
+    echo "🔧 Running wallust..."
+    if wallust run $image_path --check-contrast -d ~/.config/wallust --saturation 20 --backend full; then
         local exit_code=0
         echo "✅ Colors extracted successfully with wallust"
-        
-        # Generate colors.json manually since wallust template has issues
-        if [[ -f ~/.cache/wal/colors.sh ]]; then
-            python3 -c "
-import os
-import json
-
-# Parse colors.sh to get variables
-colors = {}
-with open(os.path.expanduser('~/.cache/wal/colors.sh'), 'r') as f:
-    for line in f:
-        if line.startswith('export '):
-            parts = line.strip().split('=', 1)
-            if len(parts) == 2:
-                key = parts[0].replace('export ', '')
-                value = parts[1].strip('\"\'')
-                colors[key] = value
-
-# Create JSON structure
-json_data = {
-    'wallpaper': colors.get('wallpaper', ''),
-    'alpha': colors.get('alpha', '100'),
-    'special': {
-        'background': colors.get('background', ''),
-        'foreground': colors.get('foreground', ''),
-        'cursor': colors.get('cursor', '')
-    },
-    'colors': {f'color{i}': colors.get(f'color{i}', '') for i in range(16)}
-}
-
-# Write JSON file
-with open(os.path.expanduser('~/.cache/wal/colors.json'), 'w') as f:
-    json.dump(json_data, f, indent=4)
-"
-        fi
     else
         echo "❌ Wallust failed to generate colors"
         return 1
@@ -744,26 +708,6 @@ with open(os.path.expanduser('~/.cache/wal/colors.json'), 'w') as f:
 
     # Set wallpaper separately using macOS command
     osascript -e "tell application \"Finder\" to set desktop picture to POSIX file \"$image_path\""
-
-    # Update kitty colors
-    if [[ "$TERM" == "xterm-kitty" ]] || [[ -n "$KITTY_WINDOW_ID" ]] || command -v kitty >/dev/null 2>&1; then
-        python3 "$HOME/.config/wal/scripts/update_kitty.py" 2>/dev/null
-        echo "Updated kitty colors"
-    else
-        echo "Kitty not detected, colors available in ~/.cache/wal/"
-    fi
-
-    # Update Zed theme
-    if [[ -f ~/dotfiles/config/wal/update_zed.py ]]; then
-        echo "Updating Zed theme..."
-        if python3 ~/dotfiles/config/wal/update_zed.py 2>/dev/null; then
-            echo "Updated Zed theme"
-        else
-            echo "⚠️  Zed theme update failed (Zed may not be running)"
-        fi
-    else
-        echo "⚠️  Zed update script not found"
-    fi
 
     echo "Applied wallpaper: $(basename "$image_path")"
     return 0
@@ -783,93 +727,6 @@ if [[ -f ~/.cache/wal/colors.sh ]]; then
     source ~/.cache/wal/colors.sh
 fi
 
-# Terminal switching and color update functions
-function update-terminal-colors() {
-    echo "Updating terminal colors..."
-
-    if [[ "$TERM" == "xterm-kitty" ]] || [[ -n "$KITTY_WINDOW_ID" ]] || command -v kitty >/dev/null 2>&1; then
-        python3 "$HOME/.config/wal/scripts/update_kitty.py" 2>/dev/null
-        echo "✅ Updated kitty colors"
-    else
-        echo "❓ Kitty not detected, colors available in ~/.cache/wal/"
-    fi
-}
-
-function terminal-info() {
-    echo "Terminal Information:"
-    echo "==================="
-    echo "TERM: $TERM"
-    echo "TERM_PROGRAM: $TERM_PROGRAM"
-    echo "ITERM_SESSION_ID: $ITERM_SESSION_ID"
-    echo "KITTY_WINDOW_ID: $KITTY_WINDOW_ID"
-    echo ""
-
-    if [[ "$TERM_PROGRAM" == "iTerm.app" ]] || [[ -n "$ITERM_SESSION_ID" ]]; then
-        echo "🖥️  Running in iTerm2"
-    elif [[ "$TERM" == "xterm-kitty" ]] || [[ -n "$KITTY_WINDOW_ID" ]]; then
-        echo "🐱 Running in kitty"
-    else
-        echo "❓ Terminal type not detected"
-    fi
-
-    # Show pywal status
-    if [[ -f ~/.cache/wal/colors.json ]]; then
-        echo "🎨 Pywal colors available"
-        local colors_date=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$HOME/.cache/wal/colors.json" 2>/dev/null)
-        echo "   Last updated: $colors_date"
-    else
-        echo "❌ No pywal colors found"
-    fi
-}
-
-# Test command for wallust setup
-function test-setwal() {
-    echo "🧪 Testing wallust setup..."
-    echo "=========================="
-
-    # Ensure wallust is in PATH
-    export PATH="$HOME/.cargo/bin:$PATH"
-
-    # Check if wallust is installed
-    if ! command -v wallust >/dev/null 2>&1; then
-        echo "❌ wallust not found. Install with: cargo install wallust"
-        return 1
-    fi
-
-    echo "✅ wallust found: $(which wallust)"
-
-    # Check for test image
-    local test_image="$HOME/Pictures/Wallpapers"
-    if [ -d "$test_image" ]; then
-        local sample_image=$(find "$test_image" -name "*.jpg" -o -name "*.png" | head -1)
-        if [ -n "$sample_image" ]; then
-            echo "✅ Test image found: $(basename "$sample_image")"
-
-            # Test wallust in pywal compatibility mode
-            echo "🔬 Testing wallust in pywal compatibility mode..."
-
-            if wallust pywal --backend colorz -i "$sample_image" -n --saturate 0.8; then
-                echo "✅ Wallust test successful!"
-            else
-                echo "❌ Wallust test failed"
-                return 1
-            fi
-            # Test terminal detection
-            echo ""
-            echo "🖥️  Terminal detection:"
-            terminal-info
-
-            return 0
-        else
-            echo "❌ No test images found in $test_image"
-            return 1
-        fi
-    else
-        echo "❌ Wallpapers directory not found: $test_image"
-        return 1
-    fi
-}
-
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.
 fpath=(/Users/jan/.docker/completions $fpath)
 autoload -Uz compinit
@@ -879,6 +736,5 @@ compinit
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:/Users/jan/.lmstudio/bin"
 # End of LM Studio CLI section
-
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

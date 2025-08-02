@@ -5,19 +5,19 @@ palette = "dark"
 [templates.colors_json]
 template = "colors.json"
 target = "~/.cache/wal/colors.json"
-pywal = true
 
 [templates.colors_sh]
 template = "colors.sh"
 target = "~/.cache/wal/colors.sh"
-pywal = true
 
 [templates.sequences]
 template = "sequences"
 target = "~/.cache/wal/sequences"
-pywal = true
 
 [templates.kitty]
 template = "kitty.conf"
 target = "~/.config/kitty/pywal-colors.conf"
-pywal = true
+
+[templates.zed_theme]
+template = "zed.json"
+target = "~/.config/zed/themes/wallust.json"

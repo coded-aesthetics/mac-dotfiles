@@ -47,9 +47,8 @@ brew install \
 
 echo "📱 Installing applications..."
 brew install --cask \
-    iterm2 \
+    kitty \
     zed \
-    visual-studio-code \
     docker \
     insomnia \
     rectangle \
@@ -57,7 +56,6 @@ brew install --cask \
 
 echo "🎯 Installing Python packages..."
 pip3 install \
-    pywal \
     requests \
     virtualenv
 
